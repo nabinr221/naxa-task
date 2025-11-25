@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router";
 import ClientLayout from "../components/layouts/ClientLayout/ClientLayout";
 import HomePage from "../pages/HomePage";
+import UserPage from "../pages/UserPage";
 
 const routes = [
   {
@@ -8,7 +9,7 @@ const routes = [
     element: <ClientLayout />,
     children: [
       { index: true, element: <HomePage /> },
-      { path: "users", element: <h1>users</h1> },
+      { path: "users", element: <UserPage /> },
     ],
   },
 ];
