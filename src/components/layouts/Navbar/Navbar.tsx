@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router";
 import { useState } from "react";
-
+import logo from "../../../assets/logo.png";
 interface MenuItem {
   path: string;
   label: string;
@@ -23,16 +23,8 @@ const Navbar = () => {
       label: "User Form",
     },
     {
-      path: "/login",
-      label: "Login",
-    },
-    {
-      path: "/dashboard",
-      label: "Dashboard",
-    },
-    {
-      path: "/profile",
-      label: "Profile",
+      path: "/maps",
+      label: "Map viewer",
     },
   ];
 
@@ -66,10 +58,9 @@ const Navbar = () => {
               to="/"
               className="flex items-center gap-2 text-xl font-bold text-blue-600 hover:text-blue-700 transition-colors"
             >
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">NT</span>
+              <div className="w-28 h-auto">
+                <img src={logo} alt="" className="w-full h-full contain" />
               </div>
-              <span className="hidden sm:block">Naxa Task</span>
             </Link>
           </div>
 
