@@ -1,174 +1,124 @@
-/**
- * Axios instance configuration
- * Centralized HTTP client with interceptors for consistent API handling
- */
+// src/api/httpClient.ts
+import type {
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+} from "axios";
+import axios from "axios";
+import { logger } from "../utils/logger";
 
-import { API_CONFIG, HTTP_STATUS, STORAGE_KEYS } from "../constants";
-import { ErrorHandler, logger } from "../utils";
+class HttpClient {
+  private instance: AxiosInstance;
 
-// Mock axios for this example - replace with actual axios if needed
-interface AxiosResponse<T = unknown> {
-  data: T;
-  status: number;
-  statusText: string;
-  headers: Record<string, string>;
-  config: unknown;
-}
+  constructor(baseURL: string) {
+    this.instance = axios.create({
+      baseURL,
+      // Explicitly type as AxiosHeaders
+    });
 
-interface AxiosError {
-  response?: AxiosResponse;
-  message: string;
-  code?: string;
-}
+    this.setupInterceptors();
+  }
 
-interface AxiosInstance {
-  get: <T>(url: string, config?: unknown) => Promise<AxiosResponse<T>>;
-  post: <T>(
-    url: string,
-    data?: unknown,
-    config?: unknown
-  ) => Promise<AxiosResponse<T>>;
-  put: <T>(
-    url: string,
-    data?: unknown,
-    config?: unknown
-  ) => Promise<AxiosResponse<T>>;
-  patch: <T>(
-    url: string,
-    data?: unknown,
-    config?: unknown
-  ) => Promise<AxiosResponse<T>>;
-  delete: <T>(url: string, config?: unknown) => Promise<AxiosResponse<T>>;
-  interceptors: {
-    request: { use: (fn: (config: unknown) => unknown) => void };
-    response: {
-      use: (
-        success: (res: AxiosResponse) => AxiosResponse,
-        error: (err: AxiosError) => Promise<never>
-      ) => void;
-    };
-  };
-}
+  private setupInterceptors(): void {
+    // Request interceptor with proper typing
+    this.instance.interceptors.request.use(
+      (config: InternalAxiosRequestConfig) => {
+        // Add auth token if available
+        const token = localStorage.getItem("authToken");
+        if (token && config.headers) {
+          
+          // Use set method for headers to ensure type safety
+          config.headers.set("Authorization", `Bearer ${token}`);
+        }
 
-// Create a basic HTTP client instance
-export const createHttpClient = (): AxiosInstance => {
-  // This is a placeholder implementation
-  // In production, you would use actual axios library
-  const client: AxiosInstance = {
-    get: async (url: string) => {
-      const response = await fetch(`${API_CONFIG.BASE_URL}${url}`);
-      return {
-        data: await response.json(),
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers),
-        config: { url },
-      };
-    },
-    post: async (url: string, data?: unknown) => {
-      const response = await fetch(`${API_CONFIG.BASE_URL}${url}`, {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
-      return {
-        data: await response.json(),
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers),
-        config: { url },
-      };
-    },
-    put: async (url: string, data?: unknown) => {
-      const response = await fetch(`${API_CONFIG.BASE_URL}${url}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      });
-      return {
-        data: await response.json(),
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers),
-        config: { url },
-      };
-    },
-    patch: async (url: string, data?: unknown) => {
-      const response = await fetch(`${API_CONFIG.BASE_URL}${url}`, {
-        method: "PATCH",
-        body: JSON.stringify(data),
-      });
-      return {
-        data: await response.json(),
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers),
-        config: { url },
-      };
-    },
-    delete: async (url: string) => {
-      const response = await fetch(`${API_CONFIG.BASE_URL}${url}`, {
-        method: "DELETE",
-      });
-      return {
-        data: await response.json(),
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers),
-        config: { url },
-      };
-    },
-    interceptors: {
-      request: {
-        use: (fn: (config: unknown) => unknown) => {
-          // Add request interceptor logic
-          fn({});
-        },
+        // Log request
+        logger.info(
+          `🚀 ${config.method?.toUpperCase()} ${config.url}`,
+          config.params || ""
+        );
+
+        return config;
       },
-      response: {
-        use: (
-          success: (res: AxiosResponse) => AxiosResponse,
-          error: (err: AxiosError) => Promise<never>
-        ) => {
-          // Add response interceptor logic
-          success({} as AxiosResponse);
-          error({} as AxiosError);
-        },
+      (error) => {
+        logger.error("❌ Request Error:", error);
+        return Promise.reject(error);
+      }
+    );
+
+    // Response interceptor
+    this.instance.interceptors.response.use(
+      (response: AxiosResponse) => {
+        logger.info(
+          `✅ ${response.status} ${response.config.url}`,
+          response.data
+        );
+        return response;
       },
-    },
-  };
+      (error) => {
+        const status = error.response?.status;
+        const message = error.response?.data?.message || error.message;
 
-  // Request interceptor - add auth token
-  client.interceptors.request.use((config: unknown) => {
-    const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
-    if (token) {
-      const cfg = config as Record<string, unknown>;
-      if (!cfg.headers) {
-        cfg.headers = {};
+        logger.error(`❌ Response Error ${status}:`, message);
+
+        // Handle specific error cases
+        switch (status) {
+          case 401:
+            localStorage.removeItem("authToken");
+            window.location.href = "/login";
+            break;
+          case 403:
+            logger.warn("Access forbidden");
+            break;
+          case 404:
+            logger.warn("Resource not found");
+            break;
+          case 500:
+            logger.error("Server error occurred");
+            break;
+          default:
+            logger.error("Network error:", message);
+        }
+
+        return Promise.reject(error);
       }
-      (cfg.headers as Record<string, string>)[
-        "Authorization"
-      ] = `Bearer ${token}`;
-    }
-    return config;
-  });
+    );
+  }
 
-  // Response interceptor - handle errors
-  client.interceptors.response.use(
-    (response: AxiosResponse) => response,
-    async (error: AxiosError) => {
-      logger.error("API request failed", error as Error);
+  // Generic methods with proper typing
+  public async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.instance.get<T>(url, config);
+    return response.data;
+  }
 
-      if (error.response?.status === HTTP_STATUS.UNAUTHORIZED) {
-        // Handle token refresh or redirect to login
-        localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-        window.location.href = "/login";
-      }
+  public async post<T>(
+    url: string,
+    data?: T,
+    config?: AxiosRequestConfig
+  ): Promise<T> {
+    const response = await this.instance.post<T>(url, data, config);
+    return response.data;
+  }
 
-      const appError = ErrorHandler.handleApiError(error);
-      return Promise.reject(appError);
-    }
-  );
+  public async put<T>(
+    url: string,
+    data?: T,
+    config?: AxiosRequestConfig
+  ): Promise<T> {
+    const response = await this.instance.put<T>(url, data, config);
+    return response.data;
+  }
 
-  return client;
-};
+  public async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.instance.delete<T>(url, config);
+    return response.data;
+  }
 
-export const httpClient = createHttpClient();
+  // Method to get the raw axios instance if needed
+  public getInstance(): AxiosInstance {
+    return this.instance;
+  }
+}
+
+// Create instance with your API base URL
+export const httpClient = new HttpClient(import.meta.env.VITE_API_URL);

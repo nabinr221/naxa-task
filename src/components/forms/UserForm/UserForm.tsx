@@ -17,7 +17,6 @@ const UserForm: React.FC<UserFormProps> = ({ onFormSubmit }) => {
     formState: { isSubmitting },
     setError,
     reset,
-    watch,
   } = useForm<UserFormData>({
     resolver: zodResolver(userFormSchema),
     defaultValues: {
