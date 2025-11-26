@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router";
 import ClientLayout from "../components/layouts/ClientLayout/ClientLayout";
 import HomePage from "../pages/HomePage";
 import UserPage from "../pages/UserPage";
+import MapPage from "../pages/MapPage";
 
 const routes = [
   {
@@ -10,7 +11,7 @@ const routes = [
     children: [
       { index: true, element: <HomePage /> },
       { path: "users", element: <UserPage /> },
-      { path: "maps", element: <h1>maps view</h1> },
+      { path: "maps", element: <MapPage /> },
     ],
   },
 ];
