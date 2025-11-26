@@ -6,6 +6,7 @@ import type {
 } from "axios";
 import axios from "axios";
 import { logger } from "../utils/logger";
+import { API_CONFIG } from "../constants";
 
 class HttpClient {
   private instance: AxiosInstance;
@@ -109,4 +110,4 @@ class HttpClient {
   }
 }
 
-export const httpClient = new HttpClient(import.meta.env.VITE_API_URL);
+export const httpClient = new HttpClient(API_CONFIG.BASE_URL);

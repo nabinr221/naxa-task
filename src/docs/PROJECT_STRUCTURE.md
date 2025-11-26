@@ -14,19 +14,19 @@ naxa-task/
 │   │   └── index.ts                   # Exports
 │   │
 │   ├── components/                    # Reusable UI components
-│   │   ├── Button/
-│   │   │   ├── Button.tsx             # Button component with variants
-│   │   │   └── index.ts
-│   │   ├── Card/
-│   │   │   ├── Card.tsx               # Card container component
-│   │   │   └── index.ts
-│   │   ├── README.md                  # Component development guidelines
-│   │   └── index.ts                   # Barrel export
+│   │     ├──UI
+          |  ├──  Button/
+│   │     | ├── Button.tsx             # Button component with variants
+│   │     | └── index.ts
+│   │     ├── Card/
+│   │     │   ├── Card.tsx               # Card container component
+│   │     │   └── index.ts
+│   │     ├── README.md                  # Component development guidelines
+│   │   
 │   │
 │   ├── pages/                         # Route-level page components
 │   │   ├── HomePage.tsx               # Home page with features showcase
-│   │   ├── LoginPage.tsx              # Login page with form validation
-│   │   └── README.md                  # Page guidelines
+│   │  
 │   │
 │   ├── hooks/                         # Custom React hooks
 │   │   ├── useAsync.ts                # Async state management hook
